@@ -369,6 +369,7 @@ This script will test all major endpoints and provide feedback on the API functi
 Test the API using tools like:
 
 - **Postman** - GUI testing ([Documentation](https://documenter.getpostman.com/view/23525113/2sB3QDuCT1))
+- **Deployed** - On Render ([URL](https://shoesstore-backend-y3gl.onrender.com))
 - **curl** - Command line testing
 - **Thunder Client** - VS Code extension
 - **Insomnia** - API client
