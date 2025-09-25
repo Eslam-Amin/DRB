@@ -19,6 +19,10 @@ const scheduleSchema = new mongoose.Schema(
         message: "Status must be active, completed, or cancelled"
       },
       default: "active"
+    },
+    completedAt: {
+      type: Date,
+      default: null
     }
   },
   {
