@@ -68,42 +68,34 @@ class DriverController {
 
   // Get driver's route history
   getDriverHistory = asyncHandler(async (req, res, next) => {
-    const { page = 1, limit = 10, status, startDate, endDate } = req.query;
+    const { page = 1, limit = 10 } = req.query;
 
     const skip = (page - 1) * limit;
-
-    const driver = await Driver.findById(req.params.id);
+    const { id: driverId } = req.params;
+    const driver = await Driver.findById(driverId);
     if (!driver) {
       return next(new ApiError("Driver not found", 404));
     }
 
-    const filter = { driver: req.params.id };
-    if (status) filter.status = status;
-    if (startDate || endDate) {
-      filter.createdAt = {};
-      if (startDate) filter.createdAt.$gte = new Date(startDate);
-      if (endDate) filter.createdAt.$lte = new Date(endDate);
-    }
-
     // Get driver's schedule history
-    const schedules = await Schedule.find(filter)
+    const schedules = await Schedule.find({ driver: driverId })
       .populate(
         "route",
         "startLocation endLocation distance estimatedTime status"
       )
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(parseInt(limit));
 
     // Get total count for pagination
-    const total = await Schedule.countDocuments(filter);
+    const totalDocs = await Schedule.countDocuments({ driver: driverId });
 
     res.status(200).json({
       status: "success",
       results: schedules.length,
-      total,
+      totalDocs,
       page,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(totalDocs / limit),
       data: {
         driver: {
           id: driver._id,
