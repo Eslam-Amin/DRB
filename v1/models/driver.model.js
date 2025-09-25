@@ -29,22 +29,6 @@ const driverSchema = new mongoose.Schema(
   }
 );
 
-// Virtual for driver's current route
-driverSchema.virtual("currentRoute", {
-  ref: "Schedule",
-  localField: "_id",
-  foreignField: "driver",
-  justOne: true,
-  match: { status: "active" }
-});
-
-// Virtual for driver's route history
-driverSchema.virtual("routeHistory", {
-  ref: "Schedule",
-  localField: "_id",
-  foreignField: "driver"
-});
-
 // Index for better query performance
 driverSchema.index({ availability: 1 });
 
