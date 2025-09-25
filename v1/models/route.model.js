@@ -30,7 +30,7 @@ const routeSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["unassigned", "assigned"],
+      enum: ["unassigned", "assigned", "completed"],
       default: "unassigned"
     }
   },
