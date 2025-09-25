@@ -25,8 +25,13 @@ router
 
 router
   .route("/:routeId/unassign-driver")
-  .post(routeController.unassignDriverFromRoute);
+  .post(
+    routesValidator.unassignDriverFromRouteValidation,
+    routeController.unassignDriverFromRoute
+  );
 
-router.route("/:routeId/finish").post(routeController.finishRoute);
+router
+  .route("/:routeId/finish")
+  .post(routesValidator.finishRouteValidation, routeController.finishRoute);
 
 module.exports = router;
