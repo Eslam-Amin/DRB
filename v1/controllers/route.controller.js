@@ -74,7 +74,8 @@ class RouteController {
   });
 
   getRoute = asyncHandler(async (req, res, next) => {
-    const route = await Route.findById(req.params.id);
+    const { routeId } = req.params;
+    const route = await Route.findById(routeId);
     if (!route) {
       return next(new ApiError("Route not found", 404));
     }
@@ -82,7 +83,8 @@ class RouteController {
   });
 
   updateRoute = asyncHandler(async (req, res, next) => {
-    const route = await Route.findByIdAndUpdate(req.params.id, req.body, {
+    const { routeId } = req.params;
+    const route = await Route.findByIdAndUpdate(routeId, req.body, {
       new: true
     });
     if (!route) {
@@ -92,7 +94,8 @@ class RouteController {
   });
 
   deleteRoute = asyncHandler(async (req, res, next) => {
-    const route = await Route.findByIdAndDelete(req.params.id);
+    const { routeId } = req.params;
+    const route = await Route.findByIdAndDelete(routeId);
     if (!route) {
       return next(new ApiError("Route not found", 404));
     }
@@ -102,7 +105,7 @@ class RouteController {
   // Helper function to assign a driver to a route
   assignDriverToRoute = asyncHandler(async (req, res, next) => {
     const { driverId } = req.body;
-    const { id: routeId } = req.params;
+    const { routeId } = req.params;
     const { driver, route } = req;
     // Create schedule assignment
     const schedule = await Schedule.create({
@@ -121,21 +124,24 @@ class RouteController {
   });
 
   unassignDriverFromRoute = asyncHandler(async (req, res, next) => {
-    const { driver, route } = req;
+    const { driver, existingRoute: route } = req;
     await route.updateOne({ $set: { status: "unassigned" } });
     await driver.updateOne({ $set: { availability: true } });
     res.status(200).json({ status: "success", data: null });
   });
 
   finishRoute = asyncHandler(async (req, res, next) => {
-    const { id: routeId } = req.params;
-    const { route } = req;
+    const { existingRoute: route } = req;
     await route.updateOne({ $set: { status: "completed" } });
-    await Schedule.updateMany(
-      { route: routeId },
-      { $set: { status: "completed" } }
+    const schedule = await Schedule.findOneAndUpdate(
+      { route: route._id },
+      { $set: { status: "completed", completedAt: new Date() } },
+      { new: true }
     );
-    await Driver.updateOne({ $set: { availability: true } });
+    await Driver.updateOne(
+      { _id: schedule.driver },
+      { $set: { availability: true } }
+    );
     res.status(200).json({ status: "success", data: null });
   });
 }
