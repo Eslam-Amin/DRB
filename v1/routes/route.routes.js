@@ -23,4 +23,10 @@ router
     routeController.assignDriverToRoute
   );
 
+router
+  .route("/:id/unassign-driver")
+  .post(routeController.unassignDriverFromRoute);
+
+router.route("/:id/finish").post(routeController.finishRoute);
+
 module.exports = router;
