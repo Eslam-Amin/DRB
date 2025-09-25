@@ -44,25 +44,6 @@ class RouteController {
     });
   });
 
-  // Helper function to assign a driver to a route
-  assignDriverToRoute = asyncHandler(async (req, res, next) => {
-    const { driverId, routeId } = req.body;
-
-    // Create schedule assignment
-    const schedule = await Schedule.create({
-      driver: driverId,
-      route: routeId,
-      status: "active"
-    });
-
-    res.status(201).json({
-      status: "success",
-      data: {
-        schedule
-      }
-    });
-  });
-
   // Get unassigned routes
   getUnassignedRoutes = asyncHandler(async (req, res, next) => {
     const { page = 1, limit = 10 } = req.query;
@@ -116,6 +97,27 @@ class RouteController {
       return next(new ApiError("Route not found", 404));
     }
     res.status(204).json({ status: "success", data: null });
+  });
+
+  // Helper function to assign a driver to a route
+  assignDriverToRoute = asyncHandler(async (req, res, next) => {
+    const { driverId } = req.body;
+    const { id: routeId } = req.params;
+    const { driver, route } = req;
+    // Create schedule assignment
+    const schedule = await Schedule.create({
+      driver: driverId,
+      route: routeId
+    });
+
+    await route.updateOne({ $set: { status: "assigned" } });
+    await driver.updateOne({ $set: { availability: false } });
+    res.status(201).json({
+      status: "success",
+      data: {
+        schedule
+      }
+    });
   });
 }
 module.exports = new RouteController();
