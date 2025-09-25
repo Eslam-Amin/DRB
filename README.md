@@ -2,6 +2,8 @@
 
 A REST API for managing route scheduling with driver assignments, built with Node.js, Express, MongoDB, and Mongoose.
 
+> 📚 **API Documentation**: For detailed endpoint documentation with examples, visit our [Postman Documentation](https://documenter.getpostman.com/view/23525113/2sB3QDuCT1).
+
 ## Features
 
 ### Core Requirements ✅
@@ -16,11 +18,15 @@ A REST API for managing route scheduling with driver assignments, built with Nod
 ### Bonus Features ✅
 
 - **GET /api/v1/drivers/{id}/history** - Driver route history
+- **POST /api/v1/routes/{id}/assign-driver** - Manual driver assignment
+- **POST /api/v1/routes/{id}/unassign-driver** - Unassign driver from route
+- **POST /api/v1/routes/{id}/finish** - Mark route as completed
 - **Pagination** for all GET endpoints
 - Advanced filtering and search
 - Comprehensive validation with Joi
 - Error handling and logging
 - Security middleware
+- Automatic driver availability management
 
 ## Tech Stack
 
@@ -32,15 +38,22 @@ A REST API for managing route scheduling with driver assignments, built with Nod
 - **Security**: Helmet, CORS, XSS protection
 - **Logging**: Morgan
 
+## API Documentation
+
+For detailed information on each endpoint, including request and response examples, refer to our [Postman Documentation](https://documenter.getpostman.com/view/23525113/2sB3QDuCT1).
+
 ## API Endpoints
 
 ### Routes
 
 - `POST /api/v1/routes` - Create a new route
 - `GET /api/v1/routes` - Get all routes (with pagination & filtering)
-- `GET /api/v1/routes/:id` - Get a specific route
-- `PATCH /api/v1/routes/:id` - Update a route
-- `DELETE /api/v1/routes/:id` - Delete a route (soft delete)
+- `GET /api/v1/routes/:routeId` - Get a specific route
+- `PATCH /api/v1/routes/:routeId` - Update a route
+- `DELETE /api/v1/routes/:routeId` - Delete a route
+- `POST /api/v1/routes/:routeId/assign-driver` - Manually assign driver to route
+- `POST /api/v1/routes/:routeId/unassign-driver` - Unassign driver from route
+- `POST /api/v1/routes/:routeId/finish` - Mark route as completed
 
 ### Drivers
 
@@ -48,17 +61,13 @@ A REST API for managing route scheduling with driver assignments, built with Nod
 - `GET /api/v1/drivers` - Get all drivers (with pagination & filtering)
 - `GET /api/v1/drivers/:id` - Get a specific driver
 - `PATCH /api/v1/drivers/:id` - Update a driver
-- `DELETE /api/v1/drivers/:id` - Delete a driver (soft delete)
+- `DELETE /api/v1/drivers/:id` - Delete a driver
 - `GET /api/v1/drivers/:id/history` - Get driver's route history
 
 ### Schedule
 
-- `GET /api/v1/schedule` - Get all schedule assignments
+- `GET /api/v1/schedule` - Get all schedule assignments (with pagination)
 - `GET /api/v1/schedule/:id` - Get a specific schedule assignment
-- `PATCH /api/v1/schedule/:id` - Update schedule status
-- `POST /api/v1/schedule` - Manually assign driver to route
-- `GET /api/v1/schedule/unassigned-routes` - Get unassigned routes
-- `GET /api/v1/schedule/available-drivers` - Get available drivers
 
 ### Health Check
 
@@ -150,6 +159,16 @@ curl -X POST http://localhost:3000/api/v1/drivers \
   }'
 ```
 
+### Assign Driver to Route
+
+```bash
+curl -X POST http://localhost:3000/api/v1/routes/{route-id}/assign-driver \
+  -H "Content-Type: application/json" \
+  -d '{
+    "driverId": "driver-id-here"
+  }'
+```
+
 ### Get Schedule
 
 ```bash
@@ -160,6 +179,18 @@ curl http://localhost:3000/api/v1/schedule
 
 ```bash
 curl http://localhost:3000/api/v1/drivers/{driver-id}/history
+```
+
+### Finish Route
+
+```bash
+curl -X POST http://localhost:3000/api/v1/routes/{route-id}/finish
+```
+
+### Unassign Driver from Route
+
+```bash
+curl -X POST http://localhost:3000/api/v1/routes/{route-id}/unassign-driver
 ```
 
 ## Data Models
@@ -213,9 +244,11 @@ curl http://localhost:3000/api/v1/drivers/{driver-id}/history
 
 1. **One Active Route**: Each driver can handle only one active route at a time
 2. **Availability Priority**: Available drivers (`availability: true`) are preferred
-3. **Automatic Assignment**: Routes are automatically assigned to available drivers when created
+3. **Manual Assignment**: Routes can be manually assigned using the assign-driver endpoint
 4. **Unassigned Routes**: Routes remain unassigned if no drivers are available
-5. **Status Updates**: Driver availability updates when routes are completed/cancelled
+5. **Status Updates**: Driver availability automatically updates when routes are completed/cancelled
+6. **Route Management**: Routes can be unassigned and reassigned as needed
+7. **Completion Tracking**: Routes can be marked as finished, updating driver availability
 
 ### Route Status Flow
 
@@ -287,26 +320,30 @@ GET /api/v1/schedule?status=active&page=1&limit=20
 ```
 ├── app.js                 # Express app configuration
 ├── server.js              # Server startup
-├── models/                # Mongoose models
-│   ├── driverModel.js
-│   ├── routeModel.js
-│   └── scheduleModel.js
-├── controllers/           # Route controllers
-│   ├── driverController.js
-│   ├── routeController.js
-│   └── scheduleController.js
-├── routes/                # Express routes
-│   ├── driverRoutes.js
-│   ├── routeRoutes.js
-│   └── scheduleRoutes.js
-├── validators/            # Joi validation schemas
-│   ├── driverValidator.js
-│   ├── routeValidator.js
-│   └── scheduleValidator.js
+├── db/                    # Database connection
+│   └── dbConnect.js
+├── v1/                    # API version 1
+│   ├── models/            # Mongoose models
+│   │   ├── driver.model.js
+│   │   ├── route.model.js
+│   │   └── schedule.model.js
+│   ├── controllers/       # Route controllers
+│   │   ├── driver.controller.js
+│   │   ├── route.controller.js
+│   │   └── schedule.controller.js
+│   ├── routes/            # Express routes
+│   │   ├── driver.routes.js
+│   │   ├── route.routes.js
+│   │   └── schedule.routes.js
+│   └── validators/        # Joi validation schemas
+│       ├── driver.validator.js
+│       └── route.validator.js
 ├── utils/                 # Utility functions
-│   ├── appError.js
-│   ├── catchAsync.js
-│   └── errorController.js
+│   ├── ApiError.js
+│   ├── errorController.js
+│   └── joiErrorHandler.js
+├── test-api.js            # API testing script
+├── env.example            # Environment variables template
 └── package.json
 ```
 
@@ -317,9 +354,21 @@ GET /api/v1/schedule?status=active&page=1&limit=20
 
 ## Testing
 
+### Built-in Test Script
+
+The project includes a test script for quick API testing:
+
+```bash
+node test-api.js
+```
+
+This script will test all major endpoints and provide feedback on the API functionality.
+
+### Additional Testing Tools
+
 Test the API using tools like:
 
-- **Postman** - GUI testing
+- **Postman** - GUI testing ([Documentation](https://documenter.getpostman.com/view/23525113/2sB3QDuCT1))
 - **curl** - Command line testing
 - **Thunder Client** - VS Code extension
 - **Insomnia** - API client
@@ -329,9 +378,7 @@ Test the API using tools like:
 1. Set `NODE_ENV=production`
 2. Configure production MongoDB URI
 3. Set up proper CORS origins
-4. Use process manager (PM2)
-5. Set up monitoring and logging
-6. Configure reverse proxy (Nginx)
+4. Set up monitoring and logging
 
 ## License
 
