@@ -52,6 +52,46 @@ class RouteValidator {
     req.route = existingRoute;
     next();
   });
+
+  unassignDriverFromRouteValidation = asyncHandler(async (req, res, next) => {
+    const schema = Joi.object({
+      driverId: Joi.string().required()
+    });
+    joiErrorHandler(schema, req);
+    const { driverId } = req.body;
+    const { routeId } = req.params;
+
+    const [existingDriver, existingRoute] = await Promise.all([
+      Driver.findById(driverId),
+      Route.findById(routeId)
+    ]);
+
+    if (!existingDriver) return next(new ApiError("Driver not found", 404));
+
+    if (!existingRoute) return next(new ApiError("Route not found", 404));
+
+    if (existingDriver.availability)
+      return next(new ApiError("Driver is already available", 400));
+
+    if (existingRoute.status === "unassigned")
+      return next(new ApiError("Route is already unassigned", 400));
+
+    req.existingDriver = existingDriver;
+    req.existingRoute = existingRoute;
+    next();
+  });
+
+  finishRouteValidation = asyncHandler(async (req, res, next) => {
+    const { routeId } = req.params;
+    const existingRoute = await Route.findById(routeId);
+    if (!existingRoute) return next(new ApiError("Route not found", 404));
+    if (existingRoute.status === "completed")
+      return next(new ApiError("Route is already completed", 400));
+    if (existingRoute.status === "unassigned")
+      return next(new ApiError("Route is not assigned", 400));
+    req.existingRoute = existingRoute;
+    next();
+  });
 }
 
 module.exports = new RouteValidator();
