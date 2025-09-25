@@ -119,5 +119,24 @@ class RouteController {
       }
     });
   });
+
+  unassignDriverFromRoute = asyncHandler(async (req, res, next) => {
+    const { driver, route } = req;
+    await route.updateOne({ $set: { status: "unassigned" } });
+    await driver.updateOne({ $set: { availability: true } });
+    res.status(200).json({ status: "success", data: null });
+  });
+
+  finishRoute = asyncHandler(async (req, res, next) => {
+    const { id: routeId } = req.params;
+    const { route } = req;
+    await route.updateOne({ $set: { status: "completed" } });
+    await Schedule.updateMany(
+      { route: routeId },
+      { $set: { status: "completed" } }
+    );
+    await Driver.updateOne({ $set: { availability: true } });
+    res.status(200).json({ status: "success", data: null });
+  });
 }
 module.exports = new RouteController();
