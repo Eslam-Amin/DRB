@@ -11,22 +11,22 @@ router
   .get(routeController.getRoutes);
 
 router
-  .route("/:id")
+  .route("/:routeId")
   .get(routeController.getRoute)
   .patch(routesValidator.updateRouteValidation, routeController.updateRoute)
   .delete(routeController.deleteRoute);
 
 router
-  .route("/:id/assign-driver")
+  .route("/:routeId/assign-driver")
   .post(
     routesValidator.assignDriverToRouteValidation,
     routeController.assignDriverToRoute
   );
 
 router
-  .route("/:id/unassign-driver")
+  .route("/:routeId/unassign-driver")
   .post(routeController.unassignDriverFromRoute);
 
-router.route("/:id/finish").post(routeController.finishRoute);
+router.route("/:routeId/finish").post(routeController.finishRoute);
 
 module.exports = router;
